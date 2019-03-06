@@ -152,6 +152,13 @@ export interface IOSWebViewProps {
   scrollEnabled?: boolean;
 
   /**
+   * A Boolean value that determines whether scrolling is disabled in a particular direction.
+   * The default value is `true`.
+   * @platform ios
+   */
+  directionalLockEnabled?: boolean;
+
+  /**
    * If the value of this property is true, the scroll view stops on multiples
    * of the scroll view’s bounds when the user scrolls.
    * The default value is false.
@@ -258,12 +265,6 @@ export interface AndroidWebViewProps {
    * @platform android
    */
   allowUniversalAccessFromFileURLs?: boolean;
-
-  /**
-   * Sets whether the webview allow access to file system.
-   * @platform android
-   */
-  allowFileAccess?: boolean;
 
   /**
    * Used on Android only, controls whether form autocomplete data should be saved
@@ -414,6 +415,12 @@ export interface WebViewSharedProps extends ViewProps, IOSWebViewProps, AndroidW
   injectedJavaScript?: string;
 
   /**
+   * Sets whether the webview allow access to file system.
+   * @platform android
+   */
+  allowFileAccess?: boolean;
+
+  /**
    * Boolean that controls whether the web content is scaled to fit
    * the view and enables the user to change the scale. The default value
    * is `true`.
@@ -449,6 +456,18 @@ export interface WebViewSharedProps extends ViewProps, IOSWebViewProps, AndroidW
    */
   nativeConfig?: WebViewNativeConfig;
 
+  /**
+   * A Boolean value that controls whether the horizontal scroll indicator is visible
+   * The default value is `true`.
+   */
+  showsHorizontalScrollIndicator?: boolean;
+
+  /**
+   * A Boolean value that controls whether the vertical scroll indicator is visible
+   * The default value is `true`
+   */
+  showsVerticalScrollIndicator?: boolean;
+
   style?: StyleProp<ViewStyle>;
   children?: ReactNode;
 }
@@ -460,4 +479,7 @@ export class WebView extends Component<WebViewSharedProps> {
   public stopLoading: () => void;
   public postMessage: (msg: string) => void;
   public injectJavaScript: (js: string) => void;
+  public scrollToOffset: (x: number, y: number, animated: boolean) => void;
+  public setZoomScale: (scale: number, animated: boolean) => void;
+  public zoomToRect: (rect: {x: number, y: number, width: number, height: number}, scale: number, animated: boolean) => void;
 }

@@ -45,6 +45,8 @@
 @property (nonatomic, assign) BOOL allowsLinkPreview;
 @property (nonatomic, assign) BOOL showsHorizontalScrollIndicator;
 @property (nonatomic, assign) BOOL showsVerticalScrollIndicator;
+@property (nonatomic, assign) BOOL directionalLockEnabled;
+@property (nonatomic, assign) BOOL allowFileAccess;
 
 + (void)setClientAuthenticationCredential:(nullable NSURLCredential*)credential;
 - (void)postMessage:(NSString *)message;
@@ -53,5 +55,8 @@
 - (void)goBack;
 - (void)reload;
 - (void)stopLoading;
+- (void)scrollToOffset:(CGPoint)point animated:(BOOL)animated;
+- (void)setZoomScale:(CGFloat)scale animated:(BOOL)animated;
+- (void)zoomToRect:(CGRect)rect withScale:(CGFloat)scale animated:(BOOL)animated;
 
 @end

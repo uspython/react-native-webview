@@ -51,6 +51,7 @@ static NSURLCredential* clientAuthenticationCredential;
     _scrollEnabled = YES;
     _showsHorizontalScrollIndicator = YES;
     _showsVerticalScrollIndicator = YES;
+    _directionalLockEnabled = YES;
     _automaticallyAdjustContentInsets = YES;
     _contentInset = UIEdgeInsetsZero;
   }
@@ -126,6 +127,8 @@ static NSURLCredential* clientAuthenticationCredential;
     wkWebViewConfig.mediaPlaybackRequiresUserAction = _mediaPlaybackRequiresUserAction;
 #endif
 
+    [wkWebViewConfig.preferences setValue:_allowFileAccess ? @YES : @NO forKey:@"allowFileAccessFromFileURLs"];
+
     _webView = [[WKWebView alloc] initWithFrame:self.bounds configuration: wkWebViewConfig];
     _webView.scrollView.delegate = self;
     _webView.UIDelegate = self;
@@ -135,6 +138,7 @@ static NSURLCredential* clientAuthenticationCredential;
     _webView.scrollView.bounces = _bounces;
     _webView.scrollView.showsHorizontalScrollIndicator = _showsHorizontalScrollIndicator;
     _webView.scrollView.showsVerticalScrollIndicator = _showsVerticalScrollIndicator;
+    _webView.scrollView.directionalLockEnabled = _directionalLockEnabled;
     _webView.allowsLinkPreview = _allowsLinkPreview;
     [_webView addObserver:self forKeyPath:@"estimatedProgress" options:NSKeyValueObservingOptionOld | NSKeyValueObservingOptionNew context:nil];
     _webView.allowsBackForwardNavigationGestures = _allowsBackForwardNavigationGestures;
@@ -349,6 +353,24 @@ static NSURLCredential* clientAuthenticationCredential;
   if (!_scrollEnabled) {
     scrollView.bounds = _webView.bounds;
   }
+}
+
+- (void)setDirectionalLockEnabled:(BOOL)directionalLockEnabled
+{
+    _directionalLockEnabled = directionalLockEnabled;
+    _webView.scrollView.directionalLockEnabled = directionalLockEnabled;
+}
+
+- (void)scrollToOffset:(CGPoint)point animated:(BOOL)animated {
+    [_webView.scrollView setContentOffset:point animated:animated];
+}
+
+- (void)setZoomScale:(CGFloat)scale animated:(BOOL)animated {
+    [_webView.scrollView setZoomScale:scale animated:animated];
+}
+
+- (void)zoomToRect:(CGRect)rect withScale:(CGFloat)scale animated:(BOOL)animated {
+    [_webView.scrollView zoomToRect:rect animated:animated];
 }
 
 - (void)setShowsHorizontalScrollIndicator:(BOOL)showsHorizontalScrollIndicator

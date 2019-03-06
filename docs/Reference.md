@@ -36,6 +36,7 @@ This document lays out the current public properties and methods for the React N
 - [`contentInset`](Reference.md#contentinset)
 - [`dataDetectorTypes`](Reference.md#datadetectortypes)
 - [`scrollEnabled`](Reference.md#scrollenabled)
+- [`directionalLockEnabled`](Reference.md#directionalLockEnabled)
 - [`geolocationEnabled`](Reference.md#geolocationenabled)
 - [`allowUniversalAccessFromFileURLs`](Reference.md#allowUniversalAccessFromFileURLs)
 - [`useWebKit`](Reference.md#usewebkit)
@@ -58,6 +59,9 @@ This document lays out the current public properties and methods for the React N
 - [`reload`](Reference.md#reload)
 - [`stopLoading`](Reference.md#stoploading)
 - [`injectJavaScript`](Reference.md#injectjavascriptstr)
+- [`scrollToOffset`](Reference.md#scrollToOffset)
+- [`setZoomScale`](Reference.md#setZoomScale)
+- [`zoomToRect`](Reference.md#zoomToRect)
 
 ---
 
@@ -700,6 +704,17 @@ Boolean value that determines whether scrolling is enabled in the `WebView`. The
 
 ---
 
+### `directionalLockEnabled`
+
+A Boolean value that determines whether scrolling is disabled in a particular direction.
+The default value is `true`.
+
+| Type | Required | Platform |
+| ---- | -------- | -------- |
+| bool | No       | iOS      |
+
+---
+
 ### `showsHorizontalScrollIndicator`
 
 Boolean value that determines whether a horizontal scroll indicator is shown in the `WebView`. The default value is `true`.
@@ -804,9 +819,9 @@ Does not store any data within the lifetime of the WebView.
 
 If true, this will allow access to the file system via `file://` URI's. The default value is `false`.
 
-| Type    | Required | Platform |
-| ------- | -------- | -------- |
-| boolean | No       | Android  |
+| Type    | Required |
+| ------- | -------- |
+| boolean | No       |
 
 ---
 
@@ -897,6 +912,30 @@ injectJavaScript('... javascript string ...');
 Executes the JavaScript string.
 
 To learn more, read the [Communicating between JS and Native](Guide.md#communicating-between-js-and-native) guide.
+
+### `scrollToOffset(xOffset, yOffset, animated)`
+
+```javascript
+scrollToOffset(100, 100, true);
+```
+
+Sets the offset from the content view’s origin that corresponds to the receiver’s origin.
+
+### `setZoomScale(scale, animated)`
+
+```javascript
+setZoomScale(2.0, true);
+```
+
+Sets the current zoom scale
+
+### `zoomToRect({x, y, width, height}, scale, animated)`
+
+```javascript
+zoomToRect({x: 5, y: 5, width: 100, height: 100}, 1.0, true);
+```
+
+Zooms to a specific area of the content so that it is visible in the webview.
 
 ## Other Docs
 

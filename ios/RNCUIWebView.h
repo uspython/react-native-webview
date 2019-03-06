@@ -35,5 +35,8 @@ shouldStartLoadForRequest:(NSMutableDictionary<NSString *, id> *)request
 - (void)stopLoading;
 - (void)postMessage:(NSString *)message;
 - (void)injectJavaScript:(NSString *)script;
+- (void)scrollToOffset:(CGPoint)point animated:(BOOL)animated;
+- (void)setZoomScale:(CGFloat)scale animated:(BOOL)animated;
+- (void)zoomToRect:(CGRect)rect withScale:(CGFloat)scale animated:(BOOL)animated;
 
 @end

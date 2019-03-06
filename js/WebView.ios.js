@@ -286,6 +286,8 @@ class WebView extends React.Component<WebViewSharedProps, State> {
         allowsLinkPreview={this.props.allowsLinkPreview}
         showsHorizontalScrollIndicator={this.props.showsHorizontalScrollIndicator}
         showsVerticalScrollIndicator={this.props.showsVerticalScrollIndicator}
+        directionalLockEnabled={this.props.directionalLockEnabled}
+        allowFileAccess={this.props.allowFileAccess}
         {...nativeConfig.props}
       />
     );
@@ -403,6 +405,30 @@ class WebView extends React.Component<WebViewSharedProps, State> {
   getWebViewHandle = () => {
     return findNodeHandle(this.webViewRef.current);
   };
+
+  scrollToOffset = (x: number, y: number, animated: boolean) => {
+    UIManager.dispatchViewManagerCommand(
+      this.getWebViewHandle(),
+      this._getCommands().scrollToOffset,
+      [{x, y}, animated],
+    );
+  };
+
+  zoomToRect = (rect: {x: number, y: number, width: number, height: number}, scale: number, animated: boolean) => {
+    UIManager.dispatchViewManagerCommand(
+      this.getWebViewHandle(),
+      this._getCommands().zoomToRect,
+      [rect, scale, animated],
+    );
+  }
+
+  setZoomScale = (scale: number, animated: boolean) => {
+    UIManager.dispatchViewManagerCommand(
+      this.getWebViewHandle(),
+      this._getCommands().setZoomScale,
+      [scale, animated],
+    );
+  }
 
   _onLoadingStart = (event: WebViewNavigationEvent) => {
     const onLoadStart = this.props.onLoadStart;

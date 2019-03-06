@@ -120,6 +120,9 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
   public static final int COMMAND_POST_MESSAGE = 5;
   public static final int COMMAND_INJECT_JAVASCRIPT = 6;
   public static final int COMMAND_LOAD_URL = 7;
+  public static final int COMMAND_SCROLL_TO_OFFSET = 1001;
+  public static final int COMMAND_SET_ZOOM_SCALE   = 1002;
+  public static final int COMMAND_ZOOM_TO_RECT     = 1003;
 
   // Use `webView.loadUrl("about:blank")` to reliably reset the view
   // state and release page resources (including any running JavaScript).
@@ -131,6 +134,11 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
 
     protected boolean mLastLoadFailed = false;
     protected @Nullable ReadableArray mUrlPrefixesForDefaultIntent;
+    protected float mZoomScale = -1.0f;
+
+    public float getZoomScale() {
+      return mZoomScale;
+    }
 
     @Override
     public void onPageFinished(WebView webView, String url) {
@@ -191,6 +199,12 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
       dispatchEvent(
           webView,
           new TopLoadingErrorEvent(webView.getId(), eventData));
+    }
+
+    @Override
+    public void onScaleChanged(WebView view, float oldScale, float newScale) {
+      super.onScaleChanged(view, oldScale, newScale);
+      mZoomScale = newScale;
     }
 
     protected void emitFinishEvent(WebView webView, String url) {
@@ -354,6 +368,28 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
     protected void cleanupCallbacksAndDestroy() {
       setWebViewClient(null);
       destroy();
+    }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    public void setZoomScale(float scale) {
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+        return;
+      }
+      float zoomScale = getRNCWebViewClient().getZoomScale();
+      if (zoomScale < 0.0f) {
+        zoomScale = getResources().getDisplayMetrics().density;
+      }
+      float zoomFactor = scale / zoomScale;
+      zoomBy(zoomFactor);
+    }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    public void zoomToOffset(int x, int y, float scale) {
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+        return;
+      }
+      setZoomScale(scale);
+      scrollTo(x, y);
     }
   }
 
@@ -726,7 +762,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
 
   @Override
   public @Nullable Map<String, Integer> getCommandsMap() {
-    return MapBuilder.of(
+    Map commandsMap = MapBuilder.of(
         "goBack", COMMAND_GO_BACK,
         "goForward", COMMAND_GO_FORWARD,
         "reload", COMMAND_RELOAD,
@@ -735,6 +771,10 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
         "injectJavaScript", COMMAND_INJECT_JAVASCRIPT,
         "loadUrl", COMMAND_LOAD_URL
       );
+    commandsMap.put("scrollToOffset", COMMAND_SCROLL_TO_OFFSET);
+    commandsMap.put("setZoomScale", COMMAND_SET_ZOOM_SCALE);
+    commandsMap.put("zoomToRect", COMMAND_ZOOM_TO_RECT);
+    return commandsMap;
   }
 
   @Override
@@ -772,16 +812,39 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
           throw new RuntimeException(e);
         }
         break;
-      case COMMAND_INJECT_JAVASCRIPT:
+      case COMMAND_INJECT_JAVASCRIPT: {
         RNCWebView reactWebView = (RNCWebView) root;
         reactWebView.evaluateJavascriptWithFallback(args.getString(0));
         break;
+      }
       case COMMAND_LOAD_URL:
         if (args == null) {
           throw new RuntimeException("Arguments for loading an url are null!");
         }
         root.loadUrl(args.getString(0));
         break;
+      case COMMAND_SCROLL_TO_OFFSET: {
+        ReadableMap point = args.getMap(0);
+        double x = point.getDouble("x");
+        double y = point.getDouble("y");
+        root.scrollTo((int)x, (int)y);
+        break;
+      }
+      case COMMAND_SET_ZOOM_SCALE: {
+        RNCWebView reactWebView = (RNCWebView) root;
+        double scale = args.getDouble(0);
+        reactWebView.setZoomScale((float)scale);
+        break;
+      }
+      case COMMAND_ZOOM_TO_RECT: {
+        RNCWebView reactWebView = (RNCWebView) root;
+        ReadableMap rect = args.getMap(0);
+        double x = rect.getDouble("x");
+        double y = rect.getDouble("y");
+        double scale = args.getDouble(1);
+        reactWebView.zoomToOffset((int)x, (int)y, (float)scale);
+        break;
+      }
     }
   }
 

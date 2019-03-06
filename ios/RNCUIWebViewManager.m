@@ -43,6 +43,7 @@ RCT_REMAP_VIEW_PROPERTY(mediaPlaybackRequiresUserAction, _webView.mediaPlaybackR
 RCT_REMAP_VIEW_PROPERTY(dataDetectorTypes, _webView.dataDetectorTypes, UIDataDetectorTypes)
 RCT_REMAP_VIEW_PROPERTY(showsHorizontalScrollIndicator, _webView.scrollView.showsHorizontalScrollIndicator, BOOL)
 RCT_REMAP_VIEW_PROPERTY(showsVerticalScrollIndicator, _webView.scrollView.showsVerticalScrollIndicator, BOOL)
+RCT_REMAP_VIEW_PROPERTY(directionalLockEnabled, _webView.scrollView.directionalLockEnabled, BOOL)
 
 RCT_EXPORT_METHOD(goBack:(nonnull NSNumber *)reactTag)
 {
@@ -114,6 +115,40 @@ RCT_EXPORT_METHOD(injectJavaScript:(nonnull NSNumber *)reactTag script:(NSString
       [view injectJavaScript:script];
     }
   }];
+}
+
+RCT_EXPORT_METHOD(scrollToOffset:(nonnull NSNumber*)reactTag point:(CGPoint)point animated:(BOOL)animated) {
+    [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, RNCUIWebView *> *viewRegistry) {
+        RNCUIWebView *view = viewRegistry[reactTag];
+        if (![view isKindOfClass:[RNCUIWebView class]]) {
+            RCTLogError(@"Invalid view returned from registry, expecting RNCUIWebView, got: %@", view);
+        } else {
+            [view scrollToOffset:point
+                        animated:animated];
+        }
+    }];
+}
+
+RCT_EXPORT_METHOD(setZoomScale:(nonnull NSNumber*)reactTag scale:(CGFloat)scale animated:(BOOL)animated) {
+    [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, RNCUIWebView *> *viewRegistry) {
+        RNCUIWebView *view = viewRegistry[reactTag];
+        if (![view isKindOfClass:[RNCUIWebView class]]) {
+            RCTLogError(@"Invalid view returned from registry, expecting RNCUIWebView, got: %@", view);
+        } else {
+            [view setZoomScale:scale animated:animated];
+        }
+    }];
+}
+
+RCT_EXPORT_METHOD(zoomToRect:(nonnull NSNumber*)reactTag rect:(CGRect)rect scale:(CGFloat)scale animated:(BOOL)animated) {
+    [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, RNCUIWebView *> *viewRegistry) {
+        RNCUIWebView *view = viewRegistry[reactTag];
+        if (![view isKindOfClass:[RNCUIWebView class]]) {
+            RCTLogError(@"Invalid view returned from registry, expecting RNCUIWebView, got: %@", view);
+        } else {
+            [view zoomToRect:rect withScale:scale animated:animated];
+        }
+    }];
 }
 
 #pragma mark - Exported synchronous methods
