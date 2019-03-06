@@ -53,5 +53,8 @@
 - (void)goBack;
 - (void)reload;
 - (void)stopLoading;
+- (void)scrollToOffset:(CGPoint)point animated:(BOOL)animated;
+- (void)setZoomScale:(CGFloat)scale animated:(BOOL)animated;
+- (void)zoomToRect:(CGRect)rect withScale:(CGFloat)scale animated:(BOOL)animated;
 
 @end

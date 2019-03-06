@@ -351,6 +351,18 @@ static NSURLCredential* clientAuthenticationCredential;
   }
 }
 
+- (void)scrollToOffset:(CGPoint)point animated:(BOOL)animated {
+    [_webView.scrollView setContentOffset:point animated:animated];
+}
+
+- (void)setZoomScale:(CGFloat)scale animated:(BOOL)animated {
+    [_webView.scrollView setZoomScale:scale animated:animated];
+}
+
+- (void)zoomToRect:(CGRect)rect withScale:(CGFloat)scale animated:(BOOL)animated {
+    [_webView.scrollView zoomToRect:rect animated:animated];
+}
+
 - (void)setShowsHorizontalScrollIndicator:(BOOL)showsHorizontalScrollIndicator
 {
     _showsHorizontalScrollIndicator = showsHorizontalScrollIndicator;

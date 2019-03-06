@@ -404,6 +404,30 @@ class WebView extends React.Component<WebViewSharedProps, State> {
     return findNodeHandle(this.webViewRef.current);
   };
 
+  scrollToOffset = (x: number, y: number, animated: boolean) => {
+    UIManager.dispatchViewManagerCommand(
+      this.getWebViewHandle(),
+      this._getCommands().scrollToOffset,
+      [{x, y}, animated],
+    );
+  };
+
+  zoomToRect = (rect: {x: number, y: number, width: number, height: number}, scale: number, animated: boolean) => {
+    UIManager.dispatchViewManagerCommand(
+      this.getWebViewHandle(),
+      this._getCommands().zoomToRect,
+      [rect, scale, animated],
+    );
+  }
+
+  setZoomScale = (scale: number, animated: boolean) => {
+    UIManager.dispatchViewManagerCommand(
+      this.getWebViewHandle(),
+      this._getCommands().setZoomScale,
+      [scale, animated],
+    );
+  }
+
   _onLoadingStart = (event: WebViewNavigationEvent) => {
     const onLoadStart = this.props.onLoadStart;
     onLoadStart && onLoadStart(event);

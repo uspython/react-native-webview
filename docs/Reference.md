@@ -58,6 +58,9 @@ This document lays out the current public properties and methods for the React N
 - [`reload`](Reference.md#reload)
 - [`stopLoading`](Reference.md#stoploading)
 - [`injectJavaScript`](Reference.md#injectjavascriptstr)
+- [`scrollToOffset`](Reference.md#scrollToOffset)
+- [`setZoomScale`](Reference.md#setZoomScale)
+- [`zoomToRect`](Reference.md#zoomToRect)
 
 ---
 
@@ -897,6 +900,30 @@ injectJavaScript('... javascript string ...');
 Executes the JavaScript string.
 
 To learn more, read the [Communicating between JS and Native](Guide.md#communicating-between-js-and-native) guide.
+
+### `scrollToOffset(xOffset, yOffset, animated)`
+
+```javascript
+scrollToOffset(100, 100, true);
+```
+
+Sets the offset from the content view’s origin that corresponds to the receiver’s origin.
+
+### `setZoomScale(scale, animated)`
+
+```javascript
+setZoomScale(2.0, true);
+```
+
+Sets the current zoom scale
+
+### `zoomToRect({x, y, width, height}, scale, animated)`
+
+```javascript
+zoomToRect({x: 5, y: 5, width: 100, height: 100}, 1.0, true);
+```
+
+Zooms to a specific area of the content so that it is visible in the webview.
 
 ## Other Docs
 
