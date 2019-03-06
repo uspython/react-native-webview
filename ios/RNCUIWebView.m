@@ -189,6 +189,18 @@ RCT_NOT_IMPLEMENTED(- (instancetype)initWithCoder:(NSCoder *)aDecoder)
                       updateOffset:YES];
 }
 
+- (void)scrollToOffset:(CGPoint)point animated:(BOOL)animated {
+    [_webView.scrollView setContentOffset:point animated:animated];
+}
+
+- (void)setZoomScale:(CGFloat)scale animated:(BOOL)animated {
+    [_webView.scrollView setZoomScale:scale animated:animated];
+}
+
+- (void)zoomToRect:(CGRect)rect withScale:(CGFloat)scale animated:(BOOL)animated {
+    [_webView.scrollView zoomToRect:rect animated:animated];
+}
+
 #pragma mark - UIWebViewDelegate methods
 
 - (BOOL)webView:(__unused UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request

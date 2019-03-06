@@ -467,4 +467,7 @@ export class WebView extends Component<WebViewSharedProps> {
   public stopLoading: () => void;
   public postMessage: (msg: string) => void;
   public injectJavaScript: (js: string) => void;
+  public scrollToOffset: (x: number, y: number, animated: boolean) => void;
+  public setZoomScale: (scale: number, animated: boolean) => void;
+  public zoomToRect: (rect: {x: number, y: number, width: number, height: number}, scale: number, animated: boolean) => void;
 }
