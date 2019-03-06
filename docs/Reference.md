@@ -819,9 +819,9 @@ Does not store any data within the lifetime of the WebView.
 
 If true, this will allow access to the file system via `file://` URI's. The default value is `false`.
 
-| Type    | Required | Platform |
-| ------- | -------- | -------- |
-| boolean | No       | Android  |
+| Type    | Required |
+| ------- | -------- |
+| boolean | No       |
 
 ---
 
