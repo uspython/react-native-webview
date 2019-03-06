@@ -126,6 +126,8 @@ static NSURLCredential* clientAuthenticationCredential;
     wkWebViewConfig.mediaPlaybackRequiresUserAction = _mediaPlaybackRequiresUserAction;
 #endif
 
+    [wkWebViewConfig.preferences setValue:_allowFileAccess ? @YES : @NO forKey:@"allowFileAccessFromFileURLs"];
+
     _webView = [[WKWebView alloc] initWithFrame:self.bounds configuration: wkWebViewConfig];
     _webView.scrollView.delegate = self;
     _webView.UIDelegate = self;

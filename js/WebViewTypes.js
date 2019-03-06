@@ -286,12 +286,6 @@ export type AndroidWebViewProps = $ReadOnly<{|
   allowUniversalAccessFromFileURLs?: ?boolean,
 
   /**
-   * Sets whether the webview allow access to file system.
-   * @platform android
-   */
-  allowFileAccess?: ?boolean,
-
-  /**
    * Used on Android only, controls whether form autocomplete data should be saved
    * @platform android
    */
@@ -448,6 +442,12 @@ export type WebViewSharedProps = $ReadOnly<{|
    * when the view loads.
    */
   injectedJavaScript?: ?string,
+
+  /**
+   * Sets whether the webview allow access to file system.
+   * @platform android
+   */
+  allowFileAccess?: ?boolean,
 
   /**
    * Boolean value that determines whether a horizontal scroll indicator is

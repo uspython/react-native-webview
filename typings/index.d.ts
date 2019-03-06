@@ -260,12 +260,6 @@ export interface AndroidWebViewProps {
   allowUniversalAccessFromFileURLs?: boolean;
 
   /**
-   * Sets whether the webview allow access to file system.
-   * @platform android
-   */
-  allowFileAccess?: boolean;
-
-  /**
    * Used on Android only, controls whether form autocomplete data should be saved
    * @platform android
    */
@@ -412,6 +406,12 @@ export interface WebViewSharedProps extends ViewProps, IOSWebViewProps, AndroidW
    * when the view loads.
    */
   injectedJavaScript?: string;
+
+  /**
+   * Sets whether the webview allow access to file system.
+   * @platform android
+   */
+  allowFileAccess?: boolean;
 
   /**
    * Boolean that controls whether the web content is scaled to fit

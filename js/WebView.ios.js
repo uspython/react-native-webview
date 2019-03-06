@@ -286,6 +286,7 @@ class WebView extends React.Component<WebViewSharedProps, State> {
         allowsLinkPreview={this.props.allowsLinkPreview}
         showsHorizontalScrollIndicator={this.props.showsHorizontalScrollIndicator}
         showsVerticalScrollIndicator={this.props.showsVerticalScrollIndicator}
+        allowFileAccess={this.props.allowFileAccess}
         {...nativeConfig.props}
       />
     );
