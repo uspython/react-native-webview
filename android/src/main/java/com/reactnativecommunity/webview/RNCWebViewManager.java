@@ -389,7 +389,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
         return;
       }
       setZoomScale(scale);
-      scrollTo(x, y);
+      // scrollTo(x, y);
     }
   }
 
