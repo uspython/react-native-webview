@@ -389,7 +389,15 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
         return;
       }
       setZoomScale(scale);
-      scrollTo(x, y);
+      String userAgentString=getSettings().getUserAgentString();
+      if(userAgentString.contains("Chrome")){
+         int index =userAgentString.lastIndexOf("Chrome");
+         int pointIndex = userAgentString.indexOf(".",index);
+         String ChromeVersion=userAgentString.substring(index+7,pointIndex);
+         int version=Integer.parseInt(ChromeVersion);
+         if(version<75){
+           scrollTo(x, y);
+         }
     }
   }
 
