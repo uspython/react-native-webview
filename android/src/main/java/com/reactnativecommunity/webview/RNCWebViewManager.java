@@ -398,6 +398,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
          if(version<75){
            scrollTo(x, y);
          }
+        }
     }
   }
 
