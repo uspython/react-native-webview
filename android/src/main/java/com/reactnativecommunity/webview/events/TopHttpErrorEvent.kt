@@ -5,12 +5,12 @@ import com.facebook.react.uimanager.events.Event
 import com.facebook.react.uimanager.events.RCTEventEmitter
 
 /**
- * Event emitted when there is a loading progress event.
+ * Event emitted when a http error is received from the server.
  */
-class TopLoadingProgressEvent(viewId: Int, private val mEventData: WritableMap) :
-  Event<TopLoadingProgressEvent>(viewId) {
+class TopHttpErrorEvent(viewId: Int, private val mEventData: WritableMap) :
+  Event<TopHttpErrorEvent>(viewId) {
   companion object {
-    const val EVENT_NAME = "topLoadingProgress"
+    const val EVENT_NAME = "topHttpError"
   }
 
   override fun getEventName(): String = EVENT_NAME
@@ -21,4 +21,5 @@ class TopLoadingProgressEvent(viewId: Int, private val mEventData: WritableMap) 
 
   override fun dispatch(rctEventEmitter: RCTEventEmitter) =
     rctEventEmitter.receiveEvent(viewTag, eventName, mEventData)
+
 }
