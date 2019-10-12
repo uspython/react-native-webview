@@ -160,7 +160,7 @@ class WebView extends React.Component<AndroidWebViewProps, State> {
     UIManager.dispatchViewManagerCommand(
       this.getWebViewHandle(),
       this.getCommands().scrollToOffset,
-      [{x, y}],
+      [{x, y}, animated],
     );
   };
 
@@ -168,7 +168,7 @@ class WebView extends React.Component<AndroidWebViewProps, State> {
     UIManager.dispatchViewManagerCommand(
       this.getWebViewHandle(),
       this.getCommands().setZoomScale,
-      [scale],
+      [scale, animated],
     );
   }
 
@@ -176,7 +176,7 @@ class WebView extends React.Component<AndroidWebViewProps, State> {
     UIManager.dispatchViewManagerCommand(
       this.getWebViewHandle(),
       this.getCommands().zoomToRect,
-      [rect, scale],
+      [rect, scale, animated],
     );
   }
 
