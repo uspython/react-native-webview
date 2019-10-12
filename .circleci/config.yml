@@ -1,7 +1,7 @@
 defaults: &defaults
   working_directory: ~/code
   docker:
-    - image: circleci/node:10.6.0-browsers
+    - image: circleci/node:12.9.1-browsers
 
 version: 2
 jobs:
@@ -35,7 +35,7 @@ jobs:
 
       - run:
           name: Run Tests
-          command: yarn ci:test
+          command: yarn ci
 
   publish:
     <<: *defaults
