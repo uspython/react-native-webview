@@ -19,6 +19,9 @@ export interface WebViewCommands {
   injectJavaScript: number;
   loadUrl: number;
   requestFocus: number;
+  scrollToOffset: number;
+  setZoomScale: number;
+  zoomToRect: number;
 }
 
 export interface RNCWebViewUIManager extends UIManagerStatic {
