@@ -1,8 +1,6 @@
 import { Component } from 'react';
 // eslint-disable-next-line
-import { IOSWebViewProps, AndroidWebViewProps } from './lib/WebViewTypes';
-
-export { WebViewMessageEvent, WebViewNavigation } from "./lib/WebViewTypes";
+import { IOSWebViewProps, AndroidWebViewProps, WebViewMessageEvent, WebViewNavigation } from './lib/WebViewTypes';
 
 export type WebViewProps = IOSWebViewProps & AndroidWebViewProps;
 
@@ -25,12 +23,12 @@ declare class WebView extends Component<WebViewProps> {
     /**
      * Stop loading the current page.
      */
-    stopLoading(): void;
+    stopLoading: () => void;
 
     /**
      * Extra Native Component Config.
      */
-    extraNativeComponentConfig: () => any;
+    extraNativeComponentConfig: () => void;
 
     /**
      * Executes the JavaScript string.
@@ -41,6 +39,12 @@ declare class WebView extends Component<WebViewProps> {
      * Focuses on WebView redered page.
      */
     requestFocus: () => void;
+
+    scrollToOffset: () => void;
+
+    setZoomScale: () => void;
+
+    zoomToRect: () => void;
 }
 
 export {WebView};
