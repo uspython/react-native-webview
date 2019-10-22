@@ -601,12 +601,6 @@ static NSDictionary* customCertificatesForHost;
     _webView.scrollView.directionalLockEnabled = directionalLockEnabled;
 }
 
-- (void)setDirectionalLockEnabled:(BOOL)directionalLockEnabled
-{
-    _directionalLockEnabled = directionalLockEnabled;
-    _webView.scrollView.directionalLockEnabled = directionalLockEnabled;
-}
-
 - (void)scrollToOffset:(CGPoint)point animated:(BOOL)animated {
     [_webView.scrollView setContentOffset:point animated:animated];
 }
