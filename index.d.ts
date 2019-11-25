@@ -40,11 +40,11 @@ declare class WebView extends Component<WebViewProps> {
      */
     requestFocus: () => void;
 
-    scrollToOffset: () => void;
+    scrollToOffset: (x: number, y: number, animated: boolean) => void;
 
-    setZoomScale: () => void;
+    setZoomScale: (scale: number, animated: boolean) => void;
 
-    zoomToRect: () => void;
+    zoomToRect: (rect: {x: number, y: number, width: number, height: number}, scale: number, animated: boolean) => void;
 }
 
 export {WebView};
