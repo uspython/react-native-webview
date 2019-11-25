@@ -151,7 +151,7 @@ static NSDictionary* customCertificatesForHost;
       wkWebViewConfig.processPool = [[RNCWKProcessPoolManager sharedManager] sharedProcessPool];
     }
     wkWebViewConfig.userContentController = [WKUserContentController new];
-
+    [wkWebViewConfig.preferences setValue:@TRUE forKey:@"allowFileAccessFromFileURLs"];
     if (_messagingEnabled) {
       [wkWebViewConfig.userContentController addScriptMessageHandler:self name:MessageHandlerName];
 
