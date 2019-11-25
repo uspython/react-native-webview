@@ -114,9 +114,9 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
   public static final int COMMAND_POST_MESSAGE = 5;
   public static final int COMMAND_INJECT_JAVASCRIPT = 6;
   public static final int COMMAND_LOAD_URL = 7;
-  public static final int COMMAND_SCROLL_TO_OFFSET = 1001;
-  public static final int COMMAND_SET_ZOOM_SCALE   = 1002;
-  public static final int COMMAND_ZOOM_TO_RECT     = 1003;
+  public static final int COMMAND_SCROLL_TO_OFFSET = 1011;
+  public static final int COMMAND_SET_ZOOM_SCALE   = 1012;
+  public static final int COMMAND_ZOOM_TO_RECT     = 1013;
   public static final int COMMAND_FOCUS = 8;
 
   // android commands
