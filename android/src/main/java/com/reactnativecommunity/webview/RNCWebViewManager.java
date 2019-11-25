@@ -118,6 +118,12 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
   public static final int COMMAND_SET_ZOOM_SCALE   = 1002;
   public static final int COMMAND_ZOOM_TO_RECT     = 1003;
   public static final int COMMAND_FOCUS = 8;
+
+  // android commands
+  public static final int COMMAND_CLEAR_FORM_DATA = 1000;
+  public static final int COMMAND_CLEAR_CACHE = 1001;
+  public static final int COMMAND_CLEAR_HISTORY = 1002;
+
   protected static final String REACT_CLASS = "RNCWebView";
   protected static final String HTML_ENCODING = "UTF-8";
   protected static final String HTML_MIME_TYPE = "text/html";
@@ -261,6 +267,27 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
     }
   }
 
+  @ReactProp(name = "cacheMode")
+  public void setCacheMode(WebView view, String cacheModeString) {
+    Integer cacheMode;
+    switch (cacheModeString) {
+      case "LOAD_CACHE_ONLY":
+        cacheMode = WebSettings.LOAD_CACHE_ONLY;
+        break;
+      case "LOAD_CACHE_ELSE_NETWORK":
+        cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK;
+        break;
+      case "LOAD_NO_CACHE":
+        cacheMode = WebSettings.LOAD_NO_CACHE;
+        break;
+      case "LOAD_DEFAULT":
+      default:
+        cacheMode = WebSettings.LOAD_DEFAULT;
+        break;
+    }
+    view.getSettings().setCacheMode(cacheMode);
+  }
+
   @ReactProp(name = "androidHardwareAccelerationDisabled")
   public void setHardwareAccelerationDisabled(WebView view, boolean disabled) {
     if (disabled) {
@@ -346,6 +373,11 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
   @ReactProp(name = "mediaPlaybackRequiresUserAction")
   public void setMediaPlaybackRequiresUserAction(WebView view, boolean requires) {
     view.getSettings().setMediaPlaybackRequiresUserGesture(requires);
+  }
+
+  @ReactProp(name = "allowFileAccessFromFileURLs")
+  public void setAllowFileAccessFromFileURLs(WebView view, boolean allow) {
+    view.getSettings().setAllowFileAccessFromFileURLs(allow);
   }
 
   @ReactProp(name = "allowUniversalAccessFromFileURLs")
@@ -520,21 +552,25 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
   }
 
   @Override
-  public @Nullable Map<String, Integer> getCommandsMap() {
-    Map commandsMap = MapBuilder.of(
-        "goBack", COMMAND_GO_BACK,
-        "goForward", COMMAND_GO_FORWARD,
-        "reload", COMMAND_RELOAD,
-        "stopLoading", COMMAND_STOP_LOADING,
-        "postMessage", COMMAND_POST_MESSAGE,
-        "injectJavaScript", COMMAND_INJECT_JAVASCRIPT,
-        "loadUrl", COMMAND_LOAD_URL
-      );
-    commandsMap.put("scrollToOffset", COMMAND_SCROLL_TO_OFFSET);
-    commandsMap.put("setZoomScale", COMMAND_SET_ZOOM_SCALE);
-    commandsMap.put("zoomToRect", COMMAND_ZOOM_TO_RECT);
-    commandsMap.put("requestFocus", COMMAND_FOCUS);
-    return commandsMap;
+  public @Nullable
+  Map<String, Integer> getCommandsMap() {
+    return MapBuilder.<String, Integer>builder()
+      .put("goBack", COMMAND_GO_BACK)
+      .put("goForward", COMMAND_GO_FORWARD)
+      .put("reload", COMMAND_RELOAD)
+      .put("stopLoading", COMMAND_STOP_LOADING)
+      .put("postMessage", COMMAND_POST_MESSAGE)
+      .put("injectJavaScript", COMMAND_INJECT_JAVASCRIPT)
+      .put("loadUrl", COMMAND_LOAD_URL)
+      .put("requestFocus", COMMAND_FOCUS)
+      .put("clearFormData", COMMAND_CLEAR_FORM_DATA)
+      .put("clearCache", COMMAND_CLEAR_CACHE)
+      .put("clearHistory", COMMAND_CLEAR_HISTORY)
+      .put("scrollToOffset", COMMAND_SCROLL_TO_OFFSET)
+      .put("setZoomScale", COMMAND_SET_ZOOM_SCALE)
+      .put("zoomToRect", COMMAND_ZOOM_TO_RECT)
+      .put("requestFocus", COMMAND_FOCUS)
+      .build();
   }
 
   @Override
@@ -607,6 +643,16 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
       }
       case COMMAND_FOCUS:
         root.requestFocus();
+        break;
+      case COMMAND_CLEAR_FORM_DATA:
+        root.clearFormData();
+        break;
+      case COMMAND_CLEAR_CACHE:
+        boolean includeDiskFiles = args != null && args.getBoolean(0);
+        root.clearCache(includeDiskFiles);
+        break;
+      case COMMAND_CLEAR_HISTORY:
+        root.clearHistory();
         break;
     }
   }
@@ -839,7 +885,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
     }
 
     // Fix WebRTC permission request error.
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void onPermissionRequest(final PermissionRequest request) {
       String[] requestedResources = request.getResources();
@@ -1009,7 +1055,9 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
     @Override
     public void setWebViewClient(WebViewClient client) {
       super.setWebViewClient(client);
-      mRNCWebViewClient = (RNCWebViewClient) client;
+      if (client instanceof RNCWebViewClient) {
+        mRNCWebViewClient = (RNCWebViewClient) client;
+      }
     }
 
     public @Nullable
