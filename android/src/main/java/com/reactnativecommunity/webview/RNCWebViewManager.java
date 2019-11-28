@@ -419,7 +419,24 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
   }
 
   protected RNCWebView createRNCWebViewInstance(ThemedReactContext reactContext) {
-    return new RNCWebView(reactContext);
+    RNCWebView webview = null;
+    try {
+      webview = new RNCWebView(reactContext);
+    } catch (Exception e) {
+      if (e.getMessage() != null && e.getMessage().toLowerCase().contains("webview")) {
+        // android bug: https://issuetracker.google.com/issues/78203310
+        // workaround: https://stackoverflow.com/a/46266199/1343200
+        // fabric: RNCWebViewManager.java line 275
+        // com.reactnativecommunity.webview.RNCWebViewManager$RNCWebView.<init>
+        // If the system failed to inflate this view because of the WebView (which could
+        // be one of several types of exceptions), it likely means that the system WebView
+        // is either not present (unlikely) OR in the process of being updated (also unlikely).
+        // It's unlikely but we have been receiving a lot of crashes.
+        // In this case, show the user a message and finish the activity
+        throw new RuntimeException(e);
+      }
+    }
+    return webview;
   }
 
   @Override
