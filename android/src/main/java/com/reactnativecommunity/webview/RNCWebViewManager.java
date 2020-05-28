@@ -2,6 +2,7 @@ package com.reactnativecommunity.webview;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
+import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
@@ -13,8 +14,12 @@ import android.Manifest;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
+
 import androidx.annotation.RequiresApi;
 import androidx.core.content.ContextCompat;
+
 import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
@@ -37,6 +42,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 
+import com.facebook.react.uimanager.events.Event;
 import com.facebook.react.views.scroll.ScrollEvent;
 import com.facebook.react.views.scroll.ScrollEventType;
 import com.facebook.react.views.scroll.OnScrollDispatchHelper;
@@ -55,7 +61,6 @@ import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.UIManagerModule;
 import com.facebook.react.uimanager.annotations.ReactProp;
 import com.facebook.react.uimanager.events.ContentSizeChangeEvent;
-import com.facebook.react.uimanager.events.Event;
 import com.facebook.react.uimanager.events.EventDispatcher;
 import com.reactnativecommunity.webview.events.TopLoadingErrorEvent;
 import com.reactnativecommunity.webview.events.TopHttpErrorEvent;
@@ -76,6 +81,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nullable;
 
@@ -164,77 +170,108 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
   }
 
   protected RNCWebView createRNCWebViewInstance(ThemedReactContext reactContext) {
-    return new RNCWebView(reactContext);
+    RNCWebView webView = null;
+    try {
+      webView = new RNCWebView(reactContext);
+    } catch (Exception e) {
+      if (e.getMessage() != null && e.getMessage().toLowerCase().contains("webview")) {
+        // android bug: https://issuetracker.google.com/issues/78203310
+        // workaround: https://stackoverflow.com/a/46266199/1343200
+        // fabric: RNCWebViewManager.java line 275
+        // com.reactnativecommunity.webview.RNCWebViewManager$RNCWebView.<init>
+        // If the system failed to inflate this view because of the WebView (which could
+        // be one of several types of exceptions), it likely means that the system WebView
+        // is either not present (unlikely) OR in the process of being updated (also unlikely).
+        // It's unlikely but we have been receiving a lot of crashes.
+        // In this case, show the user a message and finish the activity
+
+        new AlertDialog.Builder(reactContext)
+          .setIcon(android.R.drawable.ic_dialog_alert)
+          .setTitle("Internal WebView Error")
+          .setMessage("Sorry for the crash, Your System WebView is either NOT PRESENT or in the process of BEING UPDATED. Please check Your System WebView, Thank you.")
+          .setPositiveButton("Fine", (dialogInterface, i) -> {
+            //set what would happen when positive button is clicked
+          })
+          .show();
+        try {
+          TimeUnit.SECONDS.sleep(5);
+        } catch (InterruptedException te) {
+          te.printStackTrace();
+        }
+        throw new RuntimeException(new Exception("Create Webview Error:" + e.getMessage()));
+      }
+    }
+    return webView;
   }
 
   @Override
   @TargetApi(Build.VERSION_CODES.LOLLIPOP)
   protected WebView createViewInstance(ThemedReactContext reactContext) {
-    RNCWebView webView = createRNCWebViewInstance(reactContext);
-    setupWebChromeClient(reactContext, webView);
-    reactContext.addLifecycleEventListener(webView);
-    mWebViewConfig.configWebView(webView);
-    WebSettings settings = webView.getSettings();
-    settings.setBuiltInZoomControls(true);
-    settings.setDisplayZoomControls(false);
-    settings.setDomStorageEnabled(true);
+      RNCWebView webView = createRNCWebViewInstance(reactContext);
+      setupWebChromeClient(reactContext, webView);
+      reactContext.addLifecycleEventListener(webView);
+      mWebViewConfig.configWebView(webView);
+      WebSettings settings = webView.getSettings();
+      settings.setBuiltInZoomControls(true);
+      settings.setDisplayZoomControls(false);
+      settings.setDomStorageEnabled(true);
 
-    settings.setAllowFileAccess(false);
-    settings.setAllowContentAccess(false);
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-      settings.setAllowFileAccessFromFileURLs(false);
-      setAllowUniversalAccessFromFileURLs(webView, false);
-    }
-    setMixedContentMode(webView, "never");
-
-    // Fixes broken full-screen modals/galleries due to body height being 0.
-    webView.setLayoutParams(
-            new LayoutParams(LayoutParams.MATCH_PARENT,
-                LayoutParams.MATCH_PARENT));
-
-    setGeolocationEnabled(webView, false);
-    if (ReactBuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-      WebView.setWebContentsDebuggingEnabled(true);
-    }
-
-    webView.setDownloadListener(new DownloadListener() {
-      public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
-        RNCWebViewModule module = getModule(reactContext);
-        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
-
-        String fileName = URLUtil.guessFileName(url, contentDisposition, mimetype);
-        String downloadMessage = "Downloading " + fileName;
-
-        //Attempt to add cookie, if it exists
-        URL urlObj = null;
-        try {
-          urlObj = new URL(url);
-          String baseUrl = urlObj.getProtocol() + "://" + urlObj.getHost();
-          String cookie = CookieManager.getInstance().getCookie(baseUrl);
-          request.addRequestHeader("Cookie", cookie);
-          System.out.println("Got cookie for DownloadManager: " + cookie);
-        } catch (MalformedURLException e) {
-          System.out.println("Error getting cookie for DownloadManager: " + e.toString());
-          e.printStackTrace();
-        }
-
-        //Finish setting up request
-        request.addRequestHeader("User-Agent", userAgent);
-        request.setTitle(fileName);
-        request.setDescription(downloadMessage);
-        request.allowScanningByMediaScanner();
-        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-        request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
-
-        module.setDownloadRequest(request);
-
-        if (module.grantFileDownloaderPermissions()) {
-          module.downloadFile();
-        }
+      settings.setAllowFileAccess(false);
+      settings.setAllowContentAccess(false);
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+        settings.setAllowFileAccessFromFileURLs(false);
+        setAllowUniversalAccessFromFileURLs(webView, false);
       }
-    });
+      setMixedContentMode(webView, "never");
 
-    return webView;
+      // Fixes broken full-screen modals/galleries due to body height being 0.
+      webView.setLayoutParams(
+        new LayoutParams(LayoutParams.MATCH_PARENT,
+          LayoutParams.MATCH_PARENT));
+
+      setGeolocationEnabled(webView, false);
+      if (ReactBuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+        WebView.setWebContentsDebuggingEnabled(true);
+      }
+
+      webView.setDownloadListener(new DownloadListener() {
+        public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
+          RNCWebViewModule module = getModule(reactContext);
+          DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
+
+          String fileName = URLUtil.guessFileName(url, contentDisposition, mimetype);
+          String downloadMessage = "Downloading " + fileName;
+
+          //Attempt to add cookie, if it exists
+          URL urlObj = null;
+          try {
+            urlObj = new URL(url);
+            String baseUrl = urlObj.getProtocol() + "://" + urlObj.getHost();
+            String cookie = CookieManager.getInstance().getCookie(baseUrl);
+            request.addRequestHeader("Cookie", cookie);
+            System.out.println("Got cookie for DownloadManager: " + cookie);
+          } catch (MalformedURLException e) {
+            System.out.println("Error getting cookie for DownloadManager: " + e.toString());
+            e.printStackTrace();
+          }
+
+          //Finish setting up request
+          request.addRequestHeader("User-Agent", userAgent);
+          request.setTitle(fileName);
+          request.setDescription(downloadMessage);
+          request.allowScanningByMediaScanner();
+          request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+          request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
+
+          module.setDownloadRequest(request);
+
+          if (module.grantFileDownloaderPermissions()) {
+            module.downloadFile();
+          }
+        }
+      });
+
+      return webView;
   }
 
   @ReactProp(name = "javaScriptEnabled")
@@ -1136,12 +1173,21 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
       if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
         return;
       }
-      float zoomScale = getRNCWebViewClient().getZoomScale();
-      if (zoomScale < 0.0f) {
-        zoomScale = getResources().getDisplayMetrics().density;
+
+      if (getRNCWebViewClient() == null) {
+        return;
       }
-      float zoomFactor = scale / zoomScale;
-      zoomBy(zoomFactor);
+
+      new Handler(Looper.getMainLooper()).post(() -> {
+        float zoomScale = getRNCWebViewClient().getZoomScale();
+        if (zoomScale < 0.0f) {
+          zoomScale = getResources().getDisplayMetrics().density;
+        }
+
+        float zoomFactor = scale / zoomScale;
+
+        zoomBy(zoomFactor);
+      });
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -1150,13 +1196,13 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
         return;
       }
       setZoomScale(scale);
-      String userAgentString=getSettings().getUserAgentString();
+      String userAgentString = getSettings().getUserAgentString();
       if(userAgentString.contains("Chrome")){
-        int index =userAgentString.lastIndexOf("Chrome");
-        int pointIndex = userAgentString.indexOf(".",index);
-        String ChromeVersion=userAgentString.substring(index+7,pointIndex);
-        int version=Integer.parseInt(ChromeVersion);
-        if(version<75){
+        int index = userAgentString.lastIndexOf("Chrome");
+        int pointIndex = userAgentString.indexOf(".", index);
+        String ChromeVersion = userAgentString.substring(index + 7, pointIndex);
+        int version = Integer.parseInt(ChromeVersion);
+        if(version < 75){
           scrollTo(x, y);
         }
       }
