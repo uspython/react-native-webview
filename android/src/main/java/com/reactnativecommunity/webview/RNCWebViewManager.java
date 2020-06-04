@@ -1260,7 +1260,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
 
         float startScale = getRNCWebViewClient().getZoomScale();
         float density = getResources().getDisplayMetrics().density;
-        final float MAX_SCALE = 1.5f * density;
+        final float MAX_SCALE = 1.6f * density;
         final double THRESHOLD = .0001;
 
         if (startScale < 0.0f) {
