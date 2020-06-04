@@ -1,5 +1,7 @@
 package com.reactnativecommunity.webview;
 
+import android.animation.Animator;
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
@@ -21,11 +23,13 @@ import androidx.annotation.RequiresApi;
 import androidx.core.content.ContextCompat;
 
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.webkit.ConsoleMessage;
 import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
@@ -74,6 +78,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -84,6 +89,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nullable;
+
+import static com.facebook.react.bridge.UiThreadUtil.runOnUiThread;
 
 /**
  * Manages instances of {@link WebView}
@@ -121,8 +128,8 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
   public static final int COMMAND_INJECT_JAVASCRIPT = 6;
   public static final int COMMAND_LOAD_URL = 7;
   public static final int COMMAND_SCROLL_TO_OFFSET = 1011;
-  public static final int COMMAND_SET_ZOOM_SCALE   = 1012;
-  public static final int COMMAND_ZOOM_TO_RECT     = 1013;
+  public static final int COMMAND_SET_ZOOM_SCALE = 1012;
+  public static final int COMMAND_ZOOM_TO_RECT = 1013;
   public static final int COMMAND_FOCUS = 8;
 
   // android commands
@@ -188,7 +195,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
         new AlertDialog.Builder(reactContext)
           .setIcon(android.R.drawable.ic_dialog_alert)
           .setTitle("Internal WebView Error")
-          .setMessage("Sorry for the crash, Your System WebView is either NOT PRESENT or in the process of BEING UPDATED. Please check Your System WebView, Thank you.")
+          .setMessage("We are so sorry, Your System WebView is either NOT PRESENT or in the process of BEING UPDATED. Please check Your System WebView, Thank you.")
           .setPositiveButton("Fine", (dialogInterface, i) -> {
             //set what would happen when positive button is clicked
           })
@@ -288,7 +295,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
   public void setShowsVerticalScrollIndicator(WebView view, boolean enabled) {
     view.setVerticalScrollBarEnabled(enabled);
   }
-  
+
   @ReactProp(name = "cacheEnabled")
   public void setCacheEnabled(WebView view, boolean enabled) {
     if (enabled) {
@@ -356,6 +363,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
       CookieManager.getInstance().setAcceptThirdPartyCookies(view, enabled);
     }
   }
+
   @ReactProp(name = "textZoom")
   public void setTextZoom(WebView view, int value) {
     view.getSettings().setTextZoom(value);
@@ -436,7 +444,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
   public void setMessagingEnabled(WebView view, boolean enabled) {
     ((RNCWebView) view).setMessagingEnabled(enabled);
   }
-   
+
   @ReactProp(name = "incognito")
   public void setIncognito(WebView view, boolean enabled) {
     // Remove all previous cookies
@@ -666,7 +674,8 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
       case COMMAND_SET_ZOOM_SCALE: {
         RNCWebView reactWebView = (RNCWebView) root;
         double scale = args.getDouble(0);
-        reactWebView.setZoomScale((float)scale);
+        boolean isAnimated = args.getBoolean(1);
+        reactWebView.zoomToScale((float) scale, isAnimated, null);
         break;
       }
       case COMMAND_ZOOM_TO_RECT: {
@@ -675,7 +684,8 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
         double x = rect.getDouble("x");
         double y = rect.getDouble("y");
         double scale = args.getDouble(1);
-        reactWebView.zoomToOffset((int)x, (int)y, (float)scale);
+        boolean isAnimated = args.getBoolean(2);
+        reactWebView.zoomToOffset((int) x, (int) y, (float) scale, isAnimated);
         break;
       }
       case COMMAND_FOCUS:
@@ -775,6 +785,11 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
 
     public float getZoomScale() {
       return mZoomScale;
+    }
+
+    @Override
+    public void onScaleChanged(WebView view, float oldScale, float newScale) {
+      mZoomScale = newScale;
     }
 
     @Override
@@ -913,9 +928,31 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
     }
 
     @Override
-    public boolean onConsoleMessage(ConsoleMessage message) {
+    public boolean onConsoleMessage(ConsoleMessage cm) {
+      try {
+        JSONObject cmJson = new JSONObject();
+
+        cmJson.put("message", cm.message());
+        cmJson.put("lineNumber", cm.lineNumber());
+        cmJson.put("sourceId", cm.sourceId());
+
+        JSONObject dataJson = new JSONObject();
+
+        dataJson.put("type", "WebAppConsoleMessage");
+        dataJson.put("payload", cmJson);
+
+        WritableMap eventData = Arguments.createMap();
+        eventData.putString("data", dataJson.toString());
+
+        dispatchEvent((WebView) this.mWebView, new TopMessageEvent(this.mWebView.getId(), eventData));
+      } catch (JSONException e) {
+        e.printStackTrace();
+      } catch (RuntimeException e) {
+        e.printStackTrace();
+      }
+
       if (ReactBuildConfig.DEBUG) {
-        return super.onConsoleMessage(message);
+        return super.onConsoleMessage(cm);
       }
       // Ignore console logs in non debug builds.
       return true;
@@ -1039,6 +1076,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
     protected boolean sendContentSizeChangeEvents = false;
     private OnScrollDispatchHelper mOnScrollDispatchHelper;
     protected boolean hasScrollEvent = false;
+    private ValueAnimator currentAnimator;
 
     /**
      * WebView must be created with an context of the current activity
@@ -1179,31 +1217,147 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
       }
 
       new Handler(Looper.getMainLooper()).post(() -> {
-        float zoomScale = getRNCWebViewClient().getZoomScale();
+        double zoomScale = getRNCWebViewClient().getZoomScale();
         if (zoomScale < 0.0f) {
           zoomScale = getResources().getDisplayMetrics().density;
         }
 
-        float zoomFactor = scale / zoomScale;
+        double zoomFactor = scale / zoomScale;
 
-        zoomBy(zoomFactor);
+        BigDecimal factor = new BigDecimal(zoomFactor);
+        BigDecimal minFactor = new BigDecimal("0.02");
+        zoomBy(factor.compareTo(minFactor) < 0 ? 0.02f : (float)zoomFactor);
+      });
+    }
+
+    public interface ZoomAnimationInterface {
+      void onAnimationFinished();
+    }
+
+    private void zoomToScale(
+      final float scale,
+      boolean isAnimated,
+      @Nullable ZoomAnimationInterface animationCallback) {
+
+      if (!isAnimated) {
+        setZoomScale(scale);
+        if (animationCallback != null) animationCallback.onAnimationFinished();
+        return;
+      }
+
+      WebView webView = this;
+
+      new Handler(Looper.getMainLooper()).post(() -> {
+        if (currentAnimator != null) {
+          currentAnimator.cancel();
+        }
+
+        if (getRNCWebViewClient() == null) {
+          setZoomScale(scale);
+          if (animationCallback != null) animationCallback.onAnimationFinished();
+          return;
+        }
+
+        float startScale = getRNCWebViewClient().getZoomScale();
+        float density = getResources().getDisplayMetrics().density;
+        final float MAX_SCALE = 1.5f * density;
+        final double THRESHOLD = .0001;
+
+        if (startScale < 0.0f) {
+          startScale = density;
+        }
+
+        if (Math.abs(startScale - scale) < THRESHOLD ) {
+          // equal，do nothing
+          if (animationCallback != null) {
+            animationCallback.onAnimationFinished();
+          }
+          return;
+        }
+
+        if (Math.abs(startScale - density) < THRESHOLD && scale < 1) {
+          // do nothing
+          if (animationCallback != null) {
+            animationCallback.onAnimationFinished();
+          }
+          return;
+        }
+
+        // Disable Zoom Animation When Zooming out
+        if(startScale > MAX_SCALE && scale < startScale) {
+          setZoomScale(scale);
+          if (animationCallback != null) animationCallback.onAnimationFinished();
+          return;
+        }
+
+        currentAnimator = ValueAnimator.ofFloat(startScale, scale)
+          .setDuration(400);
+        currentAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
+
+        currentAnimator.addUpdateListener(animation -> {
+          // You can use the animated value in a property that uses the
+          // same type as the animation. In this case, you can use the
+          // float value in the translationX property.
+          float animatedValue = (float) animation.getAnimatedValue();
+          setZoomScale(animatedValue);
+        });
+
+
+        currentAnimator.addListener(new Animator.AnimatorListener() {
+          @Override
+          public void onAnimationRepeat(Animator animation) {
+          }
+
+          @Override
+          public void onAnimationStart(Animator animation) {
+          }
+
+          @Override
+          public void onAnimationCancel(Animator animation) {
+          }
+
+          @Override
+          public void onAnimationEnd(Animator animation) {
+            if (animationCallback != null) {
+              animationCallback.onAnimationFinished();
+            }
+          }
+        });
+
+        currentAnimator.start();
       });
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    public void zoomToOffset(int x, int y, float scale) {
+    public void zoomToOffset(int x, int y, float scale, boolean isAnimated) {
       if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
         return;
       }
-      setZoomScale(scale);
+
+      zoomToScale(scale, isAnimated, () -> setScrollTo(x, y));
+    }
+
+    /**
+     * Chrome version >= 75, use browser's `scrollIntoView` with a smooth animation.
+     * Otherwise, use RNWebview's `scrollTo' without any animations.
+     * This can be improved
+     */
+    private void setScrollTo(int x, int y) {
       String userAgentString = getSettings().getUserAgentString();
-      if(userAgentString.contains("Chrome")){
+      if (userAgentString.contains("Chrome")) {
         int index = userAgentString.lastIndexOf("Chrome");
         int pointIndex = userAgentString.indexOf(".", index);
         String ChromeVersion = userAgentString.substring(index + 7, pointIndex);
         int version = Integer.parseInt(ChromeVersion);
-        if(version < 75){
-          scrollTo(x, y);
+        if (version < 75) {
+          new Thread(() -> {
+            try {
+              Thread.sleep(200);
+            } catch (InterruptedException e) {
+              e.printStackTrace();
+            }
+            runOnUiThread(() -> scrollTo(x, y));
+          }).start();
         }
       }
     }
